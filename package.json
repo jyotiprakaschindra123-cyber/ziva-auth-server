@@ -1,0 +1,20 @@
+{
+  "name": "ziva-auth-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ziva Browse compatible authentication server",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js",
+    "create-user": "node scripts/create-user.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}
