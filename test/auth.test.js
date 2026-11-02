@@ -167,6 +167,23 @@ test('health reports memory storage', async () => {
   assert.equal(result.body.storage, 'memory');
 });
 
+test('admin dashboard is served as HTML', async () => {
+  const response = await fetch(`${base}/`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type'), /text\/html/);
+  const html = await response.text();
+  assert.match(html, /Ziva Auth Admin/);
+  assert.match(html, /Create customer ID/);
+  assert.match(html, /api\/admin\/users/);
+});
+
+test('root still answers JSON when requested', async () => {
+  const response = await fetch(`${base}/`, { headers: { accept: 'application/json' } });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.service, 'Ziva Browse authentication');
+});
+
 test('admin creates a user', async () => {
   const result = await api('/api/admin/users', {
     method: 'POST',
@@ -307,6 +324,16 @@ test('admin lists users and audit entries', async () => {
   });
   assert.equal(audit.status, 200);
   assert.ok(audit.body.entries.length > 0);
+});
+
+test('admin lists devices bound to a user', async () => {
+  const result = await api('/api/admin/users/alice/devices', {
+    headers: { authorization: 'Bearer test-admin' },
+  });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.username, 'alice');
+  assert.ok(result.body.devices.length >= 1);
+  assert.equal(result.body.devices[0].installationId, installationId);
 });
 
 test('admin API requires the token', async () => {

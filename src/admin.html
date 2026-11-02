@@ -1,0 +1,1404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Ziva Browse authentication administration">
+<title>Ziva Auth Admin</title>
+<style>
+  :root {
+    --bg: #060a12;
+    --bg-soft: #0a111d;
+    --panel: #0e1727;
+    --panel-2: #111d31;
+    --line: #1d2c45;
+    --line-soft: #16233a;
+    --text: #e9eefb;
+    --muted: #8da1c2;
+    --muted-2: #637796;
+    --accent: #4e9cff;
+    --accent-2: #7b61ff;
+    --good: #2fd18b;
+    --warn: #ffb84d;
+    --bad: #ff6272;
+    --radius: 16px;
+    --shadow: 0 24px 70px rgba(0, 0, 0, .45);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { min-height: 100%; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(900px 520px at 8% -8%, rgba(78, 156, 255, .18), transparent 60%),
+      radial-gradient(760px 480px at 96% 2%, rgba(123, 97, 255, .14), transparent 62%),
+      var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, .022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, .022) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .65), transparent 80%);
+  }
+
+  h1, h2, h3, p { margin: 0; }
+  h1 { font-size: 30px; letter-spacing: -.03em; line-height: 1.15; }
+  h2 { font-size: 16px; letter-spacing: -.01em; }
+  h3 { font-size: 17px; letter-spacing: -.01em; }
+  code, .mono { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+
+  .hidden { display: none !important; }
+  .muted { color: var(--muted); }
+  .right { text-align: right; }
+
+  .eyebrow {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* ---------- Login ---------- */
+
+  .login-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 28px 18px;
+  }
+
+  .login-card {
+    width: min(430px, 100%);
+    background: linear-gradient(180deg, rgba(18, 29, 49, .96), rgba(10, 17, 29, .98));
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 34px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-card::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(78, 156, 255, .75), transparent);
+  }
+
+  .brand-mark {
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: linear-gradient(145deg, var(--accent), var(--accent-2));
+    color: white;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.04em;
+    box-shadow: 0 12px 30px rgba(78, 156, 255, .28);
+    margin-bottom: 20px;
+  }
+
+  .brand-mark.small {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    font-size: 19px;
+    margin: 0;
+    box-shadow: none;
+  }
+
+  .login-card h1 { margin-bottom: 8px; }
+  .login-card .sub { color: var(--muted); margin-bottom: 26px; }
+
+  label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    margin: 0 0 7px;
+  }
+
+  input {
+    width: 100%;
+    height: 44px;
+    padding: 0 13px;
+    color: var(--text);
+    background: #0a1220;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    font: inherit;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+
+  input::placeholder { color: #5b6f8e; }
+
+  input:focus {
+    border-color: rgba(78, 156, 255, .8);
+    box-shadow: 0 0 0 4px rgba(78, 156, 255, .12);
+    background: #0b1526;
+  }
+
+  .key-row { position: relative; display: flex; gap: 8px; }
+  .key-row input { padding-right: 68px; }
+  .key-row .icon-btn {
+    position: absolute;
+    right: 7px;
+    top: 7px;
+    height: 30px;
+    padding: 0 10px;
+  }
+
+  .form-error {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 98, 114, .1);
+    border: 1px solid rgba(255, 98, 114, .28);
+    color: #ffb3ba;
+    font-size: 13px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 15px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #111c2e;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .12s, border-color .15s, background .15s, color .15s;
+    white-space: nowrap;
+  }
+
+  .btn:hover { border-color: #2c4570; background: #16233a; }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), #3d7ff0);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 10px 24px rgba(78, 156, 255, .2);
+  }
+
+  .btn.primary:hover { background: linear-gradient(135deg, #65a9ff, #4b8cf7); }
+
+  .btn.ghost { background: transparent; }
+  .btn.ghost:hover { background: rgba(78, 156, 255, .08); }
+  .btn.danger { color: #ffb3ba; border-color: rgba(255, 98, 114, .3); }
+  .btn.danger:hover { background: rgba(255, 98, 114, .12); }
+  .btn.danger-text { color: #ff9aa5; }
+  .btn.small { height: 32px; padding: 0 11px; font-size: 12px; }
+  .btn.tiny { height: 28px; padding: 0 9px; font-size: 11.5px; border-radius: 8px; }
+  .btn.wide { width: 100%; height: 44px; margin-top: 18px; }
+
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(17, 28, 46, .9);
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .icon-btn:hover { color: var(--text); border-color: #2c4570; }
+
+  .server-state {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted-2);
+    box-shadow: 0 0 0 4px rgba(141, 161, 194, .08);
+    flex: 0 0 auto;
+  }
+
+  .dot.good { background: var(--good); box-shadow: 0 0 0 4px rgba(47, 209, 139, .12); }
+  .dot.bad { background: var(--bad); box-shadow: 0 0 0 4px rgba(255, 98, 114, .12); }
+  .dot.warn { background: var(--warn); box-shadow: 0 0 0 4px rgba(255, 184, 77, .12); }
+
+  .fine { color: var(--muted-2); font-size: 11px; margin-top: 14px; }
+
+  /* ---------- App ---------- */
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(6, 10, 18, .82);
+    border-bottom: 1px solid var(--line-soft);
+    backdrop-filter: blur(18px);
+  }
+
+  .topbar-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    min-height: 68px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand strong { display: block; font-size: 15px; letter-spacing: -.01em; }
+  .brand span { display: block; color: var(--muted-2); font-size: 11px; }
+
+  .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+  .health-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 12px;
+    background: rgba(17, 28, 46, .6);
+  }
+
+  .container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 34px 24px 50px;
+  }
+
+  .hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 { font-size: 34px; margin-bottom: 8px; }
+  .hero p { color: var(--muted); max-width: 640px; }
+
+  .hero-meta {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 5px 12px;
+    align-items: center;
+    padding: 13px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(14, 23, 39, .55);
+    font-size: 11px;
+    color: var(--muted-2);
+  }
+
+  .hero-meta code, .hero-meta strong { color: var(--muted); font-size: 11px; font-weight: 600; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .stat {
+    background: linear-gradient(180deg, rgba(17, 29, 49, .76), rgba(12, 21, 36, .78));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 15px 16px;
+    min-width: 0;
+  }
+
+  .stat span { display: block; color: var(--muted-2); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .stat strong { display: block; font-size: 26px; letter-spacing: -.03em; margin-top: 4px; }
+  .stat em { display: block; color: var(--muted-2); font-size: 11px; font-style: normal; margin-top: 2px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 370px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .card {
+    background: linear-gradient(180deg, rgba(15, 25, 43, .9), rgba(10, 17, 29, .92));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .25);
+  }
+
+  .create-card, .users-card, .audit-card { padding: 20px; }
+  .create-card { position: sticky; top: 90px; }
+  .create-card input { margin-bottom: 14px; }
+  .create-card label { margin-top: 0; }
+
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .card-head p { color: var(--muted-2); font-size: 12px; margin-top: 3px; }
+
+  .inline-field { display: flex; gap: 8px; margin-bottom: 14px; }
+  .inline-field input { margin-bottom: 0; }
+  .inline-field .btn { flex: 0 0 auto; height: 44px; }
+
+  .hint {
+    margin-top: 18px;
+    padding: 12px 13px;
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    background: rgba(78, 156, 255, .045);
+    display: grid;
+    gap: 3px;
+  }
+
+  .hint strong { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .hint span { color: var(--muted-2); font-size: 11.5px; }
+
+  .table-tools { display: flex; gap: 8px; align-items: center; }
+  .table-tools input { width: 190px; height: 34px; font-size: 12.5px; }
+
+  .table-wrap { overflow-x: auto; margin: 0 -20px -20px; }
+
+  table { width: 100%; border-collapse: collapse; min-width: 680px; }
+
+  th {
+    text-align: left;
+    color: var(--muted-2);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    background: rgba(8, 14, 25, .5);
+  }
+
+  th:first-child, td:first-child { padding-left: 20px; }
+  th:last-child, td:last-child { padding-right: 20px; }
+
+  td { padding: 13px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: rgba(78, 156, 255, .035); }
+
+  .empty { color: var(--muted-2); text-align: center; padding: 34px 14px !important; }
+
+  .user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: linear-gradient(145deg, rgba(78, 156, 255, .22), rgba(123, 97, 255, .18));
+    border: 1px solid rgba(78, 156, 255, .22);
+    color: #bcd9ff;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .user strong { display: block; font-size: 13px; }
+  .user .mono { display: block; color: var(--muted-2); font-size: 10px; margin-top: 1px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 23px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+
+  .badge.good { color: #7af0c0; background: rgba(47, 209, 139, .1); border-color: rgba(47, 209, 139, .22); }
+  .badge.bad { color: #ffadb5; background: rgba(255, 98, 114, .1); border-color: rgba(255, 98, 114, .22); }
+  .badge.warn { color: #ffd28f; background: rgba(255, 184, 77, .09); border-color: rgba(255, 184, 77, .22); }
+  .badge.neutral { color: var(--muted); background: rgba(141, 161, 194, .08); border-color: var(--line); }
+
+  .actions { display: flex; gap: 5px; justify-content: flex-end; }
+
+  .audit-card { margin-top: 18px; }
+
+  .audit-list { display: grid; gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft); border-radius: 11px; overflow: hidden; }
+
+  .audit-row {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr) 150px 150px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 13px;
+    background: #0b1422;
+    font-size: 12px;
+  }
+
+  .audit-row:hover { background: #0e1929; }
+  .audit-row .event { color: #bcd9ff; font-weight: 600; }
+  .audit-row .who { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .audit-row .ip { color: var(--muted-2); font-family: "Cascadia Code", Consolas, monospace; font-size: 10.5px; }
+  .audit-row .when { color: var(--muted-2); text-align: right; font-size: 11px; }
+
+  .footer { color: var(--muted-2); font-size: 11px; text-align: center; padding-top: 30px; }
+  .footer code { color: var(--muted); }
+
+  /* ---------- Modal / toast ---------- */
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background: rgba(2, 5, 10, .72);
+    backdrop-filter: blur(7px);
+  }
+
+  .modal-card {
+    width: min(720px, 100%);
+    max-height: min(84vh, 820px);
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #111c2f, #0b1321);
+    border: 1px solid #263c5e;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .modal-head .icon-btn { width: 32px; height: 32px; font-size: 14px; }
+
+  .modal-body { padding: 20px; overflow-y: auto; }
+
+  .modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--line-soft);
+    background: rgba(7, 12, 21, .5);
+  }
+
+  .modal-foot:empty { display: none; }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .section-title:not(:first-child) { margin-top: 22px; }
+
+  .list { display: grid; gap: 8px; }
+
+  .list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 13px;
+    border: 1px solid var(--line-soft);
+    border-radius: 11px;
+    background: rgba(9, 16, 28, .55);
+  }
+
+  .list-item .main { min-width: 0; }
+  .list-item strong { display: block; font-size: 12.5px; }
+  .list-item .sub { display: block; color: var(--muted-2); font-size: 11px; margin-top: 2px; overflow-wrap: anywhere; }
+  .list-item .side { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+
+  .kv {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 9px 14px;
+    padding: 14px;
+    border: 1px solid var(--line-soft);
+    border-radius: 11px;
+    background: rgba(9, 16, 28, .55);
+  }
+
+  .kv dt { color: var(--muted-2); font-size: 11px; font-weight: 600; }
+  .kv dd { margin: 0; font-size: 12.5px; overflow-wrap: anywhere; }
+
+  .notice {
+    padding: 12px 13px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 184, 77, .22);
+    background: rgba(255, 184, 77, .07);
+    color: #ffd28f;
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .toast {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 80;
+    max-width: min(420px, calc(100vw - 44px));
+    padding: 12px 15px;
+    border: 1px solid #2b4367;
+    border-radius: 11px;
+    background: #101d31;
+    color: var(--text);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .4);
+    font-size: 13px;
+  }
+
+  .toast.bad { border-color: rgba(255, 98, 114, .4); color: #ffc2c8; }
+  .toast.good { border-color: rgba(47, 209, 139, .35); color: #a8f4d5; }
+
+  @media (max-width: 1040px) {
+    .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid { grid-template-columns: 1fr; }
+    .create-card { position: static; }
+  }
+
+  @media (max-width: 760px) {
+    .topbar-inner { padding: 12px 16px; align-items: flex-start; flex-direction: column; }
+    .top-actions { width: 100%; justify-content: flex-start; }
+    .container { padding: 24px 16px 40px; }
+    .hero { flex-direction: column; align-items: flex-start; }
+    .hero h1 { font-size: 28px; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .table-tools { width: 100%; }
+    .table-tools input { width: 100%; }
+    .card-head { flex-direction: column; }
+    .audit-row { grid-template-columns: 1fr; gap: 3px; }
+    .audit-row .when { text-align: left; }
+    .actions { flex-wrap: wrap; }
+    .login-card { padding: 26px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<section id="loginView" class="login-shell">
+  <div class="login-card">
+    <div class="brand-mark">Z</div>
+    <p class="eyebrow">Ziva Browse</p>
+    <h1>Auth admin</h1>
+    <p class="sub">Create and manage the customer IDs used to sign in to Ziva Browse.</p>
+
+    <form id="loginForm" autocomplete="off">
+      <label for="adminKey">Admin key</label>
+      <div class="key-row">
+        <input id="adminKey" type="password" placeholder="Paste ADMIN_TOKEN" autocomplete="current-password" spellcheck="false">
+        <button type="button" id="toggleKey" class="icon-btn">Show</button>
+      </div>
+      <p id="loginError" class="form-error hidden"></p>
+      <button id="loginBtn" class="btn primary wide" type="submit">Open dashboard</button>
+    </form>
+
+    <div class="server-state">
+      <span class="dot" id="loginDot"></span>
+      <span id="loginHealth">Checking server…</span>
+    </div>
+    <p class="fine">The admin key stays in this browser and is sent only to this server as a Bearer token.</p>
+  </div>
+</section>
+
+<section id="appView" class="hidden">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark small">Z</div>
+        <div><strong>Ziva Auth</strong><span>Admin console</span></div>
+      </div>
+      <div class="top-actions">
+        <span class="health-pill"><span class="dot" id="healthDot"></span><span id="healthText">Checking…</span></span>
+        <button class="btn ghost" id="refreshBtn" type="button">Refresh</button>
+        <button class="btn ghost" id="exportBtn" type="button">Export CSV</button>
+        <button class="btn ghost danger-text" id="signOutBtn" type="button">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Customer access control</p>
+        <h1>Customer IDs</h1>
+        <p>Create credentials for your customers, inspect their bound devices and sessions, and revoke access when needed.</p>
+      </div>
+      <div class="hero-meta">
+        <span>Service</span><code id="serviceUrl">—</code>
+        <span>Storage</span><strong id="storageText">—</strong>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><span>Total IDs</span><strong id="statUsers">0</strong><em>customer accounts</em></div>
+      <div class="stat"><span>Active</span><strong id="statActive">0</strong><em>can sign in</em></div>
+      <div class="stat"><span>Disabled</span><strong id="statDisabled">0</strong><em>blocked accounts</em></div>
+      <div class="stat"><span>Devices</span><strong id="statDevices">0</strong><em>bound installations</em></div>
+      <div class="stat"><span>Sessions</span><strong id="statSessions">0</strong><em>active tokens</em></div>
+    </section>
+
+    <section class="grid">
+      <article class="card create-card">
+        <div class="card-head">
+          <div><h2>Create customer ID</h2><p>Set the username, password and optional lock.</p></div>
+        </div>
+        <form id="createForm" autocomplete="off">
+          <label for="newUsername">Username</label>
+          <input id="newUsername" maxlength="64" placeholder="customer name" autocapitalize="none" spellcheck="false" required>
+
+          <label for="newPassword">Password</label>
+          <div class="inline-field">
+            <input id="newPassword" type="password" maxlength="72" placeholder="minimum 6 characters" autocomplete="new-password" required>
+            <button type="button" class="btn ghost small" id="genPassword">Generate</button>
+          </div>
+
+          <label for="newLock">Lock <span class="muted">(optional)</span></label>
+          <input id="newLock" maxlength="3" inputmode="numeric" placeholder="exactly 3 digits">
+
+          <p id="createError" class="form-error hidden"></p>
+          <button class="btn primary wide" type="submit" id="createBtn">Create ID</button>
+        </form>
+        <div class="hint">
+          <strong>Rules</strong>
+          <span>Username 3–64 characters, no spaces. Password 6–72 characters. Lock empty or exactly 3 digits.</span>
+        </div>
+      </article>
+
+      <article class="card users-card">
+        <div class="card-head">
+          <div><h2>Accounts</h2><p id="userCount">0 customers</p></div>
+          <div class="table-tools">
+            <input id="search" type="search" placeholder="Search username…" spellcheck="false">
+            <button class="btn ghost small" id="refreshUsers" type="button">Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Devices</th>
+                <th>Sessions</th>
+                <th>Created</th>
+                <th class="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userRows">
+              <tr><td colspan="6" class="empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="card audit-card">
+      <div class="card-head">
+        <div><h2>Recent activity</h2><p>Account, device and session events.</p></div>
+        <button class="btn ghost small" id="refreshAudit" type="button">Refresh</button>
+      </div>
+      <div id="auditList" class="audit-list"><div class="audit-row"><span class="event">Loading…</span></div></div>
+    </section>
+
+    <footer class="footer">
+      Ziva Browse authentication server · API <code>/api</code> · Health <code>/api/health</code>
+    </footer>
+  </main>
+</section>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="modalTitle">Details</h3>
+      <button class="icon-btn" id="modalClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+    <div id="modalFoot" class="modal-foot"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+'use strict';
+
+const TOKEN_KEY = 'ziva_admin_token';
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  token: sessionStorage.getItem(TOKEN_KEY) || '',
+  users: [],
+  audit: [],
+  health: null,
+  filter: '',
+};
+
+function esc(value) {
+  return String(value === undefined || value === null ? '' : value).replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
+
+function fmt(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function shortId(value) {
+  return value ? String(value).slice(0, 8) : '—';
+}
+
+function setText(id, text) {
+  const element = $(id);
+  if (element) element.textContent = text;
+}
+
+async function api(path, options = {}) {
+  const headers = Object.assign({}, options.headers || {});
+  if (state.token && path.indexOf('/api/admin') === 0) {
+    headers.Authorization = 'Bearer ' + state.token;
+  }
+  const request = Object.assign({}, options, { headers, cache: 'no-store' });
+  if (request.body && typeof request.body !== 'string') {
+    headers['Content-Type'] = 'application/json';
+    request.body = JSON.stringify(request.body);
+  }
+
+  const response = await fetch(path, request);
+  const text = await response.text();
+  let data = null;
+  if (text) {
+    try { data = JSON.parse(text); } catch (error) { data = null; }
+  }
+  if (!response.ok) {
+    const failure = new Error((data && data.message) || ('Request failed (' + response.status + ')'));
+    failure.status = response.status;
+    failure.code = data && data.error;
+    throw failure;
+  }
+  return data;
+}
+
+function toast(message, kind) {
+  const element = $('toast');
+  element.textContent = message;
+  element.className = 'toast ' + (kind || '');
+  element.classList.remove('hidden');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => element.classList.add('hidden'), 4200);
+}
+
+function showLogin(message) {
+  $('appView').classList.add('hidden');
+  $('loginView').classList.remove('hidden');
+  setLoginError(message || '');
+  $('adminKey').focus();
+}
+
+function showApp() {
+  $('loginView').classList.add('hidden');
+  $('appView').classList.remove('hidden');
+  renderAll();
+}
+
+function setLoginError(message) {
+  const element = $('loginError');
+  element.textContent = message || '';
+  element.classList.toggle('hidden', !message);
+}
+
+function setLoginBusy(busy) {
+  const button = $('loginBtn');
+  button.disabled = busy;
+  button.textContent = busy ? 'Checking…' : 'Open dashboard';
+}
+
+async function loadHealth() {
+  try {
+    const data = await api('/api/health');
+    state.health = data;
+    const storage = data.storage === 'postgres' ? 'Postgres' : 'Memory (dev)';
+    setText('loginHealth', 'Online · ' + storage + (data.production ? ' · production' : ' · development'));
+    setText('healthText', data.ok ? 'Online' : 'Offline');
+    setText('storageText', data.storage === 'postgres' ? 'PostgreSQL' : 'In-memory (dev)');
+    $('loginDot').className = 'dot ' + (data.ok ? 'good' : 'bad');
+    $('healthDot').className = 'dot ' + (data.ok ? 'good' : 'bad');
+  } catch (error) {
+    setText('loginHealth', 'Server unreachable');
+    setText('healthText', 'Offline');
+    $('loginDot').className = 'dot bad';
+    $('healthDot').className = 'dot bad';
+  }
+}
+
+async function loadUsers() {
+  const data = await api('/api/admin/users');
+  state.users = Array.isArray(data.users) ? data.users : [];
+  renderAll();
+}
+
+async function loadAudit() {
+  const data = await api('/api/admin/audit?limit=50');
+  state.audit = Array.isArray(data.entries) ? data.entries : [];
+  renderAudit();
+}
+
+function renderAll() {
+  renderStats();
+  renderUsers();
+}
+
+function renderStats() {
+  const users = state.users;
+  const active = users.filter((user) => !user.disabled).length;
+  const devices = users.reduce((total, user) => total + (Number(user.deviceCount) || 0), 0);
+  const sessions = users.reduce((total, user) => total + (Number(user.sessionCount) || 0), 0);
+  setText('statUsers', users.length);
+  setText('statActive', active);
+  setText('statDisabled', users.length - active);
+  setText('statDevices', devices);
+  setText('statSessions', sessions);
+  setText('userCount', users.length + (users.length === 1 ? ' customer' : ' customers'));
+  setText('serviceUrl', location.origin);
+}
+
+function renderUsers() {
+  const body = $('userRows');
+  const query = state.filter.trim().toLowerCase();
+  const users = state.users.filter((user) => !query || String(user.username).toLowerCase().includes(query));
+
+  if (!users.length) {
+    body.innerHTML = '<tr><td colspan="6" class="empty">' +
+      (state.users.length ? 'No customer matches that search.' : 'No customer IDs yet. Create the first one.') +
+      '</td></tr>';
+    return;
+  }
+
+  body.innerHTML = users.map((user) => {
+    const status = user.disabled
+      ? '<span class="badge bad">Disabled</span>'
+      : '<span class="badge good">Active</span>';
+    return '<tr>' +
+      '<td><div class="user"><span class="avatar">' + esc(String(user.username || '?').slice(0, 1).toUpperCase()) + '</span>' +
+        '<div><strong>' + esc(user.username) + '</strong><span class="mono">' + esc(shortId(user.id)) + '…</span></div></div></td>' +
+      '<td>' + status + '</td>' +
+      '<td>' + (Number(user.deviceCount) || 0) + '</td>' +
+      '<td>' + (Number(user.sessionCount) || 0) + '</td>' +
+      '<td class="muted">' + esc(fmt(user.createdAt)) + '</td>' +
+      '<td><div class="actions">' +
+        '<button class="btn tiny" type="button" data-action="manage" data-user="' + esc(user.username) + '">Manage</button>' +
+        '<button class="btn tiny" type="button" data-action="reset" data-user="' + esc(user.username) + '">Reset</button>' +
+        '<button class="btn tiny ' + (user.disabled ? '' : 'danger') + '" type="button" data-action="toggle" data-user="' +
+          esc(user.username) + '" data-disabled="' + (user.disabled ? 'true' : 'false') + '">' +
+          (user.disabled ? 'Enable' : 'Disable') + '</button>' +
+      '</div></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function eventLabel(value) {
+  return String(value || 'event').replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+function renderAudit() {
+  const list = $('auditList');
+  if (!state.audit.length) {
+    list.innerHTML = '<div class="audit-row"><span class="event">No activity recorded yet.</span></div>';
+    return;
+  }
+
+  const names = new Map(state.users.map((user) => [user.id, user.username]));
+  list.innerHTML = state.audit.slice(0, 25).map((entry) => {
+    const detail = entry.detail && typeof entry.detail === 'object'
+      ? (entry.detail.username || entry.detail.event || '')
+      : (entry.detail || '');
+    const who = names.get(entry.userId) || detail || shortId(entry.userId) || 'system';
+    return '<div class="audit-row">' +
+      '<span class="event">' + esc(eventLabel(entry.event)) + '</span>' +
+      '<span class="who">' + esc(who) + '</span>' +
+      '<span class="ip">' + esc(entry.ip || '—') + '</span>' +
+      '<span class="when">' + esc(fmt(entry.createdAt)) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function openModal(title, bodyHtml, footHtml) {
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = bodyHtml || '';
+  $('modalFoot').innerHTML = footHtml || '';
+  $('modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  $('modal').classList.add('hidden');
+  $('modalBody').innerHTML = '';
+  $('modalFoot').innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const key = $('adminKey').value.trim();
+  if (!key) {
+    setLoginError('Enter the admin key.');
+    return;
+  }
+
+  state.token = key;
+  setLoginError('');
+  setLoginBusy(true);
+
+  try {
+    await loadUsers();
+    await Promise.allSettled([loadAudit(), loadHealth()]);
+    sessionStorage.setItem(TOKEN_KEY, key);
+    showApp();
+  } catch (error) {
+    state.token = '';
+    if (error.status === 401) setLoginError('That admin key is not valid.');
+    else if (error.status === 503) setLoginError('The admin API is disabled. Set ADMIN_TOKEN on the server.');
+    else setLoginError(error.message);
+  } finally {
+    setLoginBusy(false);
+  }
+}
+
+function signOut() {
+  state.token = '';
+  state.users = [];
+  state.audit = [];
+  sessionStorage.removeItem(TOKEN_KEY);
+  $('adminKey').value = '';
+  showLogin('Signed out.');
+  loadHealth();
+}
+
+async function createUser(event) {
+  event.preventDefault();
+  const username = $('newUsername').value.trim();
+  const password = $('newPassword').value;
+  const lock = $('newLock').value.trim();
+  const errorElement = $('createError');
+  errorElement.classList.add('hidden');
+
+  if (!username || username.length < 3) {
+    errorElement.textContent = 'Username must be at least 3 characters.';
+    errorElement.classList.remove('hidden');
+    return;
+  }
+  if (password.length < 6) {
+    errorElement.textContent = 'Password must be at least 6 characters.';
+    errorElement.classList.remove('hidden');
+    return;
+  }
+  if (lock && !/^\d{3}$/.test(lock)) {
+    errorElement.textContent = 'Lock must be empty or exactly 3 digits.';
+    errorElement.classList.remove('hidden');
+    return;
+  }
+
+  const button = $('createBtn');
+  button.disabled = true;
+  button.textContent = 'Creating…';
+
+  try {
+    const body = { username, password };
+    if (lock) body.lock = lock;
+    const data = await api('/api/admin/users', { method: 'POST', body });
+    $('createForm').reset();
+    await Promise.allSettled([loadUsers(), loadAudit()]);
+    toast('Customer ID created.', 'good');
+    openCreated(data.user.username, password, lock);
+  } catch (error) {
+    errorElement.textContent = error.status === 409
+      ? 'That username is already registered.'
+      : error.message;
+    errorElement.classList.remove('hidden');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Create ID';
+  }
+}
+
+function openCreated(username, password, lock) {
+  const rows =
+    '<dl class="kv">' +
+      '<dt>Username</dt><dd><strong>' + esc(username) + '</strong></dd>' +
+      '<dt>Password</dt><dd><code>' + esc(password) + '</code></dd>' +
+      '<dt>Lock</dt><dd>' + (lock ? '<code>' + esc(lock) + '</code>' : '<span class="muted">No lock</span>') + '</dd>' +
+    '</dl>' +
+    '<div class="notice" style="margin-top:16px">Share these details with the customer now. The password cannot be shown again.</div>';
+
+  const text = 'Ziva Browse login\nUsername: ' + username + '\nPassword: ' + password + (lock ? '\nLock: ' + lock : '');
+
+  openModal('Customer ID created', rows,
+    '<button class="btn ghost" type="button" id="copyCreated">Copy details</button>' +
+    '<button class="btn primary" type="button" id="doneCreated">Done</button>');
+
+  $('copyCreated').addEventListener('click', () => copyText(text));
+  $('doneCreated').addEventListener('click', closeModal);
+}
+
+async function toggleUser(username, currentlyDisabled) {
+  const nextDisabled = !currentlyDisabled;
+  if (nextDisabled && !confirm('Disable "' + username + '"? Their sessions will be revoked.')) return;
+
+  try {
+    await api('/api/admin/users/' + encodeURIComponent(username) + '/disable', {
+      method: 'POST',
+      body: { disabled: nextDisabled },
+    });
+    toast(nextDisabled ? 'Customer disabled.' : 'Customer enabled.', 'good');
+    await Promise.allSettled([loadUsers(), loadAudit()]);
+  } catch (error) {
+    toast(error.message, 'bad');
+  }
+}
+
+function openReset(username) {
+  const body =
+    '<p class="muted" style="margin-bottom:16px">Set a new password for <strong>' + esc(username) +
+    '</strong>. Existing sessions will be revoked.</p>' +
+    '<label for="resetPassword">New password</label>' +
+    '<div class="inline-field"><input id="resetPassword" type="password" maxlength="72" placeholder="minimum 6 characters" autocomplete="new-password">' +
+    '<button class="btn ghost small" type="button" id="resetGenerate">Generate</button></div>' +
+    '<label for="resetLock">Lock <span class="muted">(optional)</span></label>' +
+    '<input id="resetLock" maxlength="3" inputmode="numeric" placeholder="exactly 3 digits">' +
+    '<p id="resetError" class="form-error hidden"></p>';
+
+  openModal('Reset credentials · ' + username, body,
+    '<button class="btn ghost" type="button" id="resetCancel">Cancel</button>' +
+    '<button class="btn primary" type="button" id="resetSubmit">Update password</button>');
+
+  $('resetCancel').addEventListener('click', closeModal);
+  $('resetGenerate').addEventListener('click', () => { $('resetPassword').value = makePassword(); });
+  $('resetSubmit').addEventListener('click', async () => {
+    const password = $('resetPassword').value;
+    const lock = $('resetLock').value.trim();
+    const errorElement = $('resetError');
+    errorElement.classList.add('hidden');
+
+    if (password.length < 6) {
+      errorElement.textContent = 'Password must be at least 6 characters.';
+      errorElement.classList.remove('hidden');
+      return;
+    }
+    if (lock && !/^\d{3}$/.test(lock)) {
+      errorElement.textContent = 'Lock must be empty or exactly 3 digits.';
+      errorElement.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      await api('/api/admin/users/' + encodeURIComponent(username) + '/password', {
+        method: 'POST',
+        body: { password, lock },
+      });
+      closeModal();
+      toast('Password updated; sessions revoked.', 'good');
+      await Promise.allSettled([loadUsers(), loadAudit()]);
+    } catch (error) {
+      errorElement.textContent = error.message;
+      errorElement.classList.remove('hidden');
+    }
+  });
+}
+
+async function openManage(username) {
+  openModal('Manage · ' + username, '<p class="muted">Loading devices and sessions…</p>', '');
+
+  try {
+    const [deviceData, sessionData] = await Promise.all([
+      api('/api/admin/users/' + encodeURIComponent(username) + '/devices'),
+      api('/api/admin/sessions?username=' + encodeURIComponent(username)),
+    ]);
+
+    const devices = deviceData.devices || [];
+    const sessions = sessionData.sessions || [];
+
+    let body = '';
+
+    body += '<div class="section-title"><span>Devices</span><span class="badge neutral">' + devices.length + '</span></div>';
+    if (!devices.length) {
+      body += '<div class="list-item"><div class="main"><strong>No devices yet</strong><span class="sub">A device is registered on the first successful sign-in.</span></div></div>';
+    } else {
+      body += '<div class="list">' + devices.map((device) => {
+        const label = [device.osName, device.osVersion].filter(Boolean).join(' ') || 'Windows device';
+        const status = device.revoked
+          ? '<span class="badge bad">Revoked</span>'
+          : '<span class="badge good">Active</span>';
+        return '<div class="list-item"><div class="main"><strong>' + esc(device.hostname || label) + '</strong>' +
+          '<span class="sub">' + esc(label) + ' · ' + esc(shortId(device.id)) + '… · last seen ' + esc(fmt(device.lastSeenAt)) + '</span>' +
+          '<span class="sub mono">' + esc(device.installationId) + '</span></div>' +
+          '<div class="side">' + status +
+          (device.revoked ? '' : '<button class="btn tiny danger" type="button" data-device="' + esc(device.id) + '">Revoke</button>') +
+          '</div></div>';
+      }).join('') + '</div>';
+    }
+
+    body += '<div class="section-title"><span>Sessions</span><span class="badge neutral">' + sessions.length + '</span></div>';
+    if (!sessions.length) {
+      body += '<div class="list-item"><div class="main"><strong>No sessions</strong><span class="sub">Sessions appear after a successful sign-in.</span></div></div>';
+    } else {
+      body += '<div class="list">' + sessions.map((session) => {
+        const status = session.revoked
+          ? '<span class="badge bad">Revoked</span>'
+          : '<span class="badge good">Active</span>';
+        return '<div class="list-item"><div class="main"><strong>Session ' + esc(shortId(session.id)) + '…</strong>' +
+          '<span class="sub">Created ' + esc(fmt(session.createdAt)) + ' · expires ' + esc(fmt(session.expiresAt)) + '</span>' +
+          '<span class="sub">Last seen ' + esc(fmt(session.lastSeenAt)) + ' · IP ' + esc(session.ip || '—') + '</span></div>' +
+          '<div class="side">' + status +
+          (session.revoked ? '' : '<button class="btn tiny danger" type="button" data-session="' + esc(session.id) + '">Revoke</button>') +
+          '</div></div>';
+      }).join('') + '</div>';
+    }
+
+    $('modalBody').innerHTML = body;
+    $('modalFoot').innerHTML = '<button class="btn ghost" type="button" id="manageClose">Close</button>' +
+      '<button class="btn" type="button" id="manageReset">Reset credentials</button>';
+
+    $('manageClose').addEventListener('click', closeModal);
+    $('manageReset').addEventListener('click', () => openReset(username));
+  } catch (error) {
+    $('modalBody').innerHTML = '<p class="form-error">' + esc(error.message) + '</p>';
+  }
+}
+
+async function revokeDevice(deviceId, username) {
+  if (!confirm('Revoke this device? Its sessions will be closed.')) return;
+  try {
+    await api('/api/admin/devices/' + encodeURIComponent(deviceId) + '/revoke', { method: 'POST' });
+    toast('Device revoked.', 'good');
+    await Promise.allSettled([loadUsers(), loadAudit()]);
+    openManage(username);
+  } catch (error) {
+    toast(error.message, 'bad');
+  }
+}
+
+async function revokeSession(sessionId, username) {
+  if (!confirm('Revoke this session? The customer will be signed out.')) return;
+  try {
+    await api('/api/admin/sessions/' + encodeURIComponent(sessionId) + '/revoke', { method: 'POST' });
+    toast('Session revoked.', 'good');
+    await Promise.allSettled([loadUsers(), loadAudit()]);
+    openManage(username);
+  } catch (error) {
+    toast(error.message, 'bad');
+  }
+}
+
+function makePassword() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join('');
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Copied to clipboard.', 'good');
+  } catch (error) {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    try {
+      document.execCommand('copy');
+      toast('Copied to clipboard.', 'good');
+    } catch (fallbackError) {
+      toast('Could not copy automatically.', 'bad');
+    }
+    area.remove();
+  }
+}
+
+function exportCsv() {
+  if (!state.users.length) {
+    toast('There are no customer IDs to export.', 'bad');
+    return;
+  }
+  const quote = (value) => '"' + String(value === undefined || value === null ? '' : value).replace(/"/g, '""') + '"';
+  const lines = ['username,status,devices,sessions,created_at'];
+  for (const user of state.users) {
+    lines.push([
+      quote(user.username),
+      quote(user.disabled ? 'disabled' : 'active'),
+      Number(user.deviceCount) || 0,
+      Number(user.sessionCount) || 0,
+      quote(user.createdAt),
+    ].join(','));
+  }
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'ziva-customers.csv';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  toast('CSV exported.', 'good');
+}
+
+async function refreshEverything() {
+  try {
+    await Promise.all([loadUsers(), loadAudit(), loadHealth()]);
+    toast('Dashboard refreshed.', 'good');
+  } catch (error) {
+    toast(error.message, 'bad');
+  }
+}
+
+function bind() {
+  $('loginForm').addEventListener('submit', handleLogin);
+  $('toggleKey').addEventListener('click', () => {
+    const input = $('adminKey');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    $('toggleKey').textContent = showing ? 'Show' : 'Hide';
+  });
+
+  $('createForm').addEventListener('submit', createUser);
+  $('genPassword').addEventListener('click', () => { $('newPassword').value = makePassword(); });
+  $('newLock').addEventListener('input', () => { $('newLock').value = $('newLock').value.replace(/\D/g, '').slice(0, 3); });
+
+  $('search').addEventListener('input', () => {
+    state.filter = $('search').value;
+    renderUsers();
+  });
+
+  $('userRows').addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
+    const username = button.dataset.user;
+    const action = button.dataset.action;
+    if (action === 'manage') openManage(username);
+    else if (action === 'reset') openReset(username);
+    else if (action === 'toggle') toggleUser(username, button.dataset.disabled === 'true');
+  });
+
+  $('modalBody').addEventListener('click', (event) => {
+    const deviceButton = event.target.closest('button[data-device]');
+    if (deviceButton) {
+      revokeDevice(deviceButton.dataset.device, $('modalTitle').textContent.replace(/^Manage · /, ''));
+      return;
+    }
+    const sessionButton = event.target.closest('button[data-session]');
+    if (sessionButton) {
+      revokeSession(sessionButton.dataset.session, $('modalTitle').textContent.replace(/^Manage · /, ''));
+    }
+  });
+
+  $('modalClose').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', (event) => {
+    if (event.target === $('modal')) closeModal();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal();
+  });
+
+  $('signOutBtn').addEventListener('click', signOut);
+  $('refreshBtn').addEventListener('click', refreshEverything);
+  $('refreshUsers').addEventListener('click', () => loadUsers().catch((error) => toast(error.message, 'bad')));
+  $('refreshAudit').addEventListener('click', () => loadAudit().catch((error) => toast(error.message, 'bad')));
+  $('exportBtn').addEventListener('click', exportCsv);
+}
+
+async function init() {
+  bind();
+  await loadHealth();
+
+  if (!state.token) {
+    showLogin('');
+    return;
+  }
+
+  try {
+    await loadUsers();
+    await Promise.allSettled([loadAudit(), loadHealth()]);
+    showApp();
+  } catch (error) {
+    state.token = '';
+    sessionStorage.removeItem(TOKEN_KEY);
+    showLogin(error.status === 401 ? 'Your saved admin key expired. Enter it again.' : error.message);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

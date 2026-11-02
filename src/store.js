@@ -169,6 +169,12 @@ class MemoryStore {
     if (device) device.lastSeenAt = new Date().toISOString();
   }
 
+  async listDevicesForUser(userId) {
+    return this.devices
+      .filter((device) => device.userId === userId)
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  }
+
   async createSession({
     id,
     userId,
@@ -434,6 +440,14 @@ class PostgresStore {
 
   async touchDevice(id) {
     await this.pool.query('UPDATE devices SET last_seen_at = now() WHERE id = $1', [id]);
+  }
+
+  async listDevicesForUser(userId) {
+    const result = await this.pool.query(
+      'SELECT * FROM devices WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId],
+    );
+    return result.rows.map(rowToDevice);
   }
 
   async createSession({

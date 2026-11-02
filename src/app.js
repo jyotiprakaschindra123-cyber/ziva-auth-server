@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
 const express = require('express');
 const configDefaults = require('./config');
 const { createStore, httpError } = require('./store');
@@ -241,6 +243,51 @@ async function loadLiveSession(store, req, body, config) {
   return { token, session, user, device };
 }
 
+const ADMIN_HTML_CANDIDATES = [
+  path.join(__dirname, 'admin.html'),
+  path.join(__dirname, '..', 'src', 'admin.html'),
+  path.join(process.cwd(), 'src', 'admin.html'),
+];
+
+let adminHtmlCache = null;
+
+function adminHtml() {
+  if (adminHtmlCache) return adminHtmlCache;
+  for (const candidate of ADMIN_HTML_CANDIDATES) {
+    try {
+      adminHtmlCache = fs.readFileSync(candidate, 'utf8');
+      return adminHtmlCache;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+  adminHtmlCache = [
+    '<!doctype html><html><head><meta charset="utf-8"><title>Ziva Auth Admin</title></head>',
+    '<body style="font-family:system-ui;background:#0b1220;color:#e8eefc;padding:40px">',
+    '<h1>Ziva Auth Admin</h1><p>The admin page could not be loaded on this deployment.</p>',
+    '<p>Verify that <code>src/admin.html</code> was included in the server bundle.</p>',
+    '</body></html>',
+  ].join('');
+  return adminHtmlCache;
+}
+
+const ADMIN_SECURITY_HEADERS = {
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "img-src 'self' data:",
+    "style-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline'",
+    "connect-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+  ].join('; '),
+  'Referrer-Policy': 'no-referrer',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Cache-Control': 'no-store',
+};
+
 function createApp(options = {}) {
   const config = { ...configDefaults, ...(options.config || {}) };
   const store = options.store || createStore(config.databaseUrl);
@@ -256,7 +303,19 @@ function createApp(options = {}) {
     next();
   }));
 
-  app.get('/', (req, res) => {
+  app.get(['/', '/admin', '/admin/'], (req, res) => {
+    if (req.query.format === 'json' || req.accepts(['html', 'json']) === 'json') {
+      return res.json({
+        service: 'Ziva Browse authentication',
+        protocol_version: 2,
+        status: 'ok',
+      });
+    }
+    res.set(ADMIN_SECURITY_HEADERS);
+    res.type('html').send(adminHtml());
+  });
+
+  app.get('/api', (req, res) => {
     res.json({
       service: 'Ziva Browse authentication',
       protocol_version: 2,
@@ -633,6 +692,26 @@ function createApp(options = {}) {
         lastSeenAt: session.lastSeenAt,
         revoked: session.revoked,
         ip: session.ip,
+      })),
+    });
+  }));
+
+  app.get('/api/admin/users/:username/devices', requireAdmin, asyncHandler(async (req, res) => {
+    const username = String(req.params.username || '').toLowerCase();
+    const user = await store.findUserByUsername(username);
+    if (!user) fail(404, 'user_not_found', 'User not found.');
+    const devices = await store.listDevicesForUser(user.id);
+    res.json({
+      username: user.username,
+      devices: devices.map((device) => ({
+        id: device.id,
+        installationId: device.installationId,
+        osName: device.osName,
+        osVersion: device.osVersion,
+        hostname: device.hostname,
+        revoked: device.revoked,
+        createdAt: device.createdAt,
+        lastSeenAt: device.lastSeenAt,
       })),
     });
   }));

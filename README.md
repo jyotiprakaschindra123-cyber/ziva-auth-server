@@ -54,6 +54,28 @@ Run the server tests with:
 npm test
 ```
 
+## Admin website
+
+Open `http://127.0.0.1:3000/` (or `/admin`) in a browser. The page asks for the
+`ADMIN_TOKEN`; the key stays in `sessionStorage` and is sent as a Bearer token.
+From the dashboard you can:
+
+- create a customer ID (username, password, optional three-digit lock) and copy
+  the credentials once;
+- search and export the account list, with device and session counts;
+- inspect a customer's bound devices and sessions, then revoke a device or a
+  single session;
+- reset a password and lock, or disable/enable an account;
+- read the recent audit trail.
+
+The dashboard is one static file, `src/admin.html`, served by Express.
+`vercel.json` includes it in the serverless bundle with `includeFiles`; keep that
+setting if you move or rename the file.
+
+Programmatic clients can still use the JSON API below. `GET /` returns JSON when
+the request prefers JSON (`Accept: application/json`) or when `?format=json` is
+appended; `GET /api` always returns the service descriptor.
+
 ## Postgres
 
 Set `DATABASE_URL` to a Postgres connection string. The schema is created on the
@@ -86,14 +108,16 @@ When deploying this folder as its own repository, leave Root Directory empty.
    - `ADMIN_TOKEN` — long random admin bearer token
    - optional: `ZIVA_SESSION_TTL_SECONDS`, `ZIVA_HEARTBEAT_SECONDS`,
      `ZIVA_MAX_DEVICES`, `ZIVA_MAX_LOGIN_FAILURES`
-6. Deploy. The API is served under `/api/*`; `https://<deployment>/api/health`
-   should return `"storage":"postgres"` and `"admin_enabled":true`.
-7. Create the first account through the admin API (see below).
+6. Deploy. The admin dashboard is served at `/`, the API under `/api/*`, and
+   `https://<deployment>/api/health` should return `"storage":"postgres"` and
+   `"admin_enabled":true`.
+7. Open the deployment root and paste `ADMIN_TOKEN` to create the first account
+   in the browser (see below).
 8. Point the Windows client at the deployment with `ZIVA_AUTH_BASE_URL` or an
    `auth.txt` beside `msedge.exe` containing the deployment URL.
 
-The included `vercel.json` routes all requests to `api/index.js`. You can also
-deploy the folder directly:
+The included `vercel.json` routes all requests to `api/index.js` and bundles
+`src/admin.html` through `includeFiles`. You can also deploy the folder directly:
 
 ```powershell
 cd server
@@ -101,6 +125,11 @@ vercel --prod
 ```
 
 ### First account
+
+The quickest route is the dashboard at `https://<deployment>/`; paste
+`ADMIN_TOKEN`, fill in the company/customer username, password and optional lock,
+then copy the generated credentials from the confirmation dialog. The same
+operation through the API is:
 
 ```powershell
 $body = @{ username = "alice"; password = "secret123"; lock = "123" } | ConvertTo-Json
@@ -118,6 +147,8 @@ client or in `auth.txt`.
 
 | Method | Path | Purpose |
 |---|---|---|
+| `GET` | `/`, `/admin` | Admin dashboard (HTML) or service JSON |
+| `GET` | `/api` | Service descriptor JSON |
 | `GET` | `/api/health` | Health and storage mode |
 | `POST` | `/api/authenticate` | Login + device registration |
 | `POST` | `/api/auth/session/heartbeat` | Extend and validate a session |
@@ -131,6 +162,7 @@ client or in `auth.txt`.
 | `GET` | `/api/admin/users` | List users + counts |
 | `POST` | `/api/admin/users/:username/disable` | Disable/enable user |
 | `POST` | `/api/admin/users/:username/password` | Reset password/lock |
+| `GET` | `/api/admin/users/:username/devices` | List devices bound to a user |
 | `POST` | `/api/admin/devices/:deviceId/revoke` | Revoke device |
 | `POST` | `/api/admin/sessions/:sessionId/revoke` | Revoke session |
 | `GET` | `/api/admin/sessions?username=alice` | List user sessions |
